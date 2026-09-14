@@ -80,6 +80,7 @@ body.narrow .node-card{padding:18px}body.narrow .node-card-name strong{font-size
 @media(max-width:440px){.node-card{padding:18px}.node-card-name strong{font-size:21px}.node-card-heading{gap:10px}}
 
 .event-feed-bottom .task-rice{font-size:23px;gap:6px}.task-rice small{font-size:16px;font-weight:500}
+.post-content .post-topic,.post-detail-text .post-topic{font:inherit}
 .receipt-reference{margin-top:6px;font-size:16px;color:var(--secondary)}.receipt-reference summary{min-height:44px;display:flex;align-items:center;font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px}.receipt-reference small{display:block;overflow-wrap:anywhere}
 
 /* Personal identity and own-profile editing follow the uploaded V11 layout. */
