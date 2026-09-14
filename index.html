@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>乡建 · 最小功能界面预览</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <section class="preview-tools" aria-label="原型演示工具">
+    <div class="tools-main">
+      <div class="preview-caption"><strong>界面预览</strong><span>静态演示 · 不操作真实资产</span></div>
+      <label class="role-control">演示身份<select id="actor"><option value="">未登录</option><option value="lin">林舟 · 参与者</option><option value="admin">青禾社区 · 管理员</option><option value="chen">陈言 · 参与者</option></select></label>
+      <details class="design-controls time-preview"><summary>时间预览</summary><div class="control-panel">
+        <p class="caption">仅用于演示活动到达开始时间后的变化。</p>
+        <label for="clock-event">正在报名的活动</label><select id="clock-event"></select>
+        <button class="tool-button" id="clock-start" type="button">模拟到开始时间</button>
+      </div></details>
+      <details class="design-controls"><summary>字号与间距</summary><div class="control-panel">
+        <label>正文字号 <output id="font-value">20px</output><input id="font-control" type="range" min="18" max="24" step="1" value="20"></label>
+        <label>按钮间距 <output id="gap-value">16px</output><input id="gap-control" type="range" min="8" max="24" step="2" value="16"></label>
+        <label>按钮高度 <output id="height-value">56px</output><input id="height-control" type="range" min="48" max="64" step="4" value="56"></label>
+        <button class="tool-button" id="width-control" type="button" aria-pressed="false">模拟手机宽度</button>
+        <button class="tool-button" id="reset-demo" type="button">重置演示数据</button>
+      </div></details>
+    </div>
+  </section>
+  <div class="app-shell">
+    <header class="topbar"><a class="brand" id="home-brand" href="#plaza" aria-label="乡建广场首页">乡建 <small>DAO</small></a><h1 class="section-title" id="section-title" hidden></h1><div class="topbar-actions"><button class="compose-button" id="header-compose" data-action="compose"><img src="./assets/plus.svg" width="14" height="14" alt="">发布</button><button class="search-button" data-action="search" aria-label="搜索帖子、任务和社区" title="搜索"><img src="./assets/search.svg" width="22" height="22" alt=""></button><a class="notification-button" id="notification-link" href="#notifications" aria-label="通知" title="通知"><img src="./assets/bell.svg" width="24" height="24" alt=""><span id="notification-dot" class="unread-dot" hidden></span></a></div></header>
+    <main id="main" tabindex="-1"></main>
+    <nav class="bottom-nav" aria-label="主要导航"><a href="#plaza" data-page="plaza">广场</a><a href="#tasks" data-page="tasks">任务</a><a href="#events" data-page="events">活动</a><a href="#me" data-page="me">我的</a></nav>
+  </div>
+  <dialog id="detail" class="detail-dialog" aria-label="内容详情"><div id="detail-content"></div></dialog>
+  <dialog id="action-dialog" class="action-dialog" aria-labelledby="action-title"><div id="action-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
