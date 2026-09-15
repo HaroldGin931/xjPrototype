@@ -1,10 +1,13 @@
-import { initialState, perform, startEvent, names } from './model.mjs';
+import { initialState, perform, startEvent, names } from './model.mjs?v=20260915-images';
+import { imageCover, imageGroup, imageEditor, setupImageViewer } from './images.mjs?v=20260915-images';
 
 let state = initialState();
 const preview = new URLSearchParams(location.search);
 let actor = preview.get('actor') === 'guest' ? '' : ['admin', 'lin', 'chen'].includes(preview.get('actor')) ? preview.get('actor') : 'lin';
 let searchQuery = '';
 const composeDrafts = {};
+let composerImages = [];
+const localImageURLs = new Set();
 let currentDetail = null;
 const detailStack = [];
 const myTaskFilters = {};
@@ -45,7 +48,7 @@ function publisherHeader(item) {
 }
 function card(item) {
   const status = item.status === 'open' ? '招募中' : labels[item.status];
-  return `<article class="task-card-v13">${publisherHeader(item)}<button class="task-card-content" data-action="detail" data-id="${item.id}"><h2>${esc(item.title)}</h2><p>${esc(item.description)}</p><div class="task-card-footer"><span class="task-state task-state-${item.status}">${status}</span><strong class="task-rice" aria-label="报酬 ${item.reward} 稻米"><img src="./assets/sprout.svg" width="24" height="24" alt="">${item.reward}</strong></div></button></article>`;
+  return `<article class="task-card-v13">${publisherHeader(item)}<button class="task-card-content" data-action="detail" data-id="${item.id}"><h2>${esc(item.title)}</h2><p>${esc(item.description)}</p>${imageCover(item)}<div class="task-card-footer"><span class="task-state task-state-${item.status}">${status}</span><strong class="task-rice" aria-label="报酬 ${item.reward} 稻米"><img src="./assets/sprout.svg" width="24" height="24" alt="">${item.reward}</strong></div></button></article>`;
 }
 function editProfileButton() {
   return '<button type="button" class="profile-edit-link" data-action="edit-profile" aria-label="编辑资料" title="编辑资料"><img src="./assets/pencil.svg" width="20" height="20" alt=""></button>';
@@ -126,7 +129,7 @@ function postActions(post) {
   return `<div class="post-interactions"><button data-action="detail" data-id="${post.id}" aria-label="查看 ${post.comments.length} 条评论">${post.comments.length} 条评论</button><button data-action="post-like" data-id="${post.id}" aria-pressed="${liked}">${liked ? '已赞' : '赞'} ${post.likes}</button></div>`;
 }
 function postCard(post) {
-  return `<article class="post-card">${authorHeader(post)}<button class="post-content" data-action="detail" data-id="${post.id}">${post.title ? `<h2>${esc(post.title)}</h2>` : ''}<p>${postText(post.text)}</p></button>${post.tag ? `<button class="post-topic" data-action="topic" data-tag="${esc(post.tag)}">#${esc(post.tag)}</button>` : ''}${postActions(post)}</article>`;
+  return `<article class="post-card">${authorHeader(post)}<button class="post-content" data-action="detail" data-id="${post.id}">${post.title ? `<h2>${esc(post.title)}</h2>` : ''}<p>${postText(post.text)}</p>${imageCover(post)}</button>${post.tag ? `<button class="post-topic" data-action="topic" data-tag="${esc(post.tag)}">#${esc(post.tag)}</button>` : ''}${postActions(post)}</article>`;
 }
 function postText(text, interactive = false) {
   return String(text).split(/(#[\p{L}\p{N}_-]+)/gu).map((part, index) => index % 2
@@ -135,10 +138,10 @@ function postText(text, interactive = false) {
 }
 function eventCard(event) {
   const status = event.status === 'open' ? '报名中' : labels[event.status];
-  return `<article class="task-card-v13 event-card-v13">${publisherHeader(event)}<button class="task-card-content" data-action="detail" data-id="${event.id}"><h2>${esc(event.title)}</h2><p>${esc(event.date)} · ${esc(event.location)}</p><div class="task-card-footer"><span class="task-state task-state-${event.status === 'ended' ? 'completed' : event.status === 'started' ? 'in_progress' : event.status}">${status}</span>${event.fee ? `<strong class="task-rice" aria-label="报名费每人 ${event.fee} 稻米"><img src="./assets/sprout.svg" width="24" height="24" alt="">${event.fee}<small>/ 人</small></strong>` : '<strong class="task-rice">免费</strong>'}</div></button></article>`;
+  return `<article class="task-card-v13 event-card-v13">${publisherHeader(event)}<button class="task-card-content" data-action="detail" data-id="${event.id}"><h2>${esc(event.title)}</h2><p>${esc(event.date)} · ${esc(event.location)}</p>${imageCover(event)}<div class="task-card-footer"><span class="task-state task-state-${event.status === 'ended' ? 'completed' : event.status === 'started' ? 'in_progress' : event.status}">${status}</span>${event.fee ? `<strong class="task-rice" aria-label="报名费每人 ${event.fee} 稻米"><img src="./assets/sprout.svg" width="24" height="24" alt="">${event.fee}<small>/ 人</small></strong>` : '<strong class="task-rice">免费</strong>'}</div></button></article>`;
 }
 function postDetail(post) {
-  return `${authorHeader(post)}${post.title ? `<h1 class="post-detail-title">${esc(post.title)}</h1>` : ''}<p class="description post-detail-text">${postText(post.text, true)}</p>${post.tag ? `<p class="post-topic">#${esc(post.tag)}</p>` : ''}${postActions(post)}<section class="detail-section"><h3>评论 · ${post.comments.length}</h3>${actor ? `<form id="comment-form" data-id="${post.id}" class="comment-form"><label class="sr-only" for="comment-input">写下你的评论</label><textarea id="comment-input" name="comment" required placeholder="写下你的评论…"></textarea><div class="single-action"><button type="submit" class="button primary">发表评论</button></div></form>` : `<div class="single-action">${button('登录后评论', 'login', {}, 'secondary')}</div>`}${post.comments.map(c => `<div class="candidate"><div class="candidate-heading"><strong>${esc(displayName(c.user))}</strong><span class="fine">${esc(c.time)}</span></div><p class="description">${esc(c.text)}</p></div>`).join('')}</section>`;
+  return `${authorHeader(post)}${post.title ? `<h1 class="post-detail-title">${esc(post.title)}</h1>` : ''}<p class="description post-detail-text">${postText(post.text, true)}</p>${imageGroup(post)}${post.tag ? `<p class="post-topic">#${esc(post.tag)}</p>` : ''}${postActions(post)}<section class="detail-section"><h3>评论 · ${post.comments.length}</h3>${actor ? `<form id="comment-form" data-id="${post.id}" class="comment-form"><label class="sr-only" for="comment-input">写下你的评论</label><textarea id="comment-input" name="comment" required placeholder="写下你的评论…"></textarea><div class="single-action"><button type="submit" class="button primary">发表评论</button></div></form>` : `<div class="single-action">${button('登录后评论', 'login', {}, 'secondary')}</div>`}${post.comments.map(c => `<div class="candidate"><div class="candidate-heading"><strong>${esc(displayName(c.user))}</strong><span class="fine">${esc(c.time)}</span></div><p class="description">${esc(c.text)}</p></div>`).join('')}</section>`;
 }
 function searchResults() {
   const q = searchQuery.trim().toLowerCase(); if (!q) return info('输入关键词，查找帖子、任务或社区。');
@@ -245,7 +248,7 @@ function taskDetail(t) {
   const submissions = (admin() || t.assignee === actor) && t.submissions.length ? `<section class="detail-section"><h3>交付成果</h3>${[...t.submissions].reverse().map((s, index) => `<div class="candidate"><div class="candidate-heading"><strong>${esc(displayName(t.assignee))} · ${esc(s.time)}</strong>${badge(s.status)}</div><p class="description">${esc(s.text)}</p>${s.feedback ? info(`修改意见：${esc(s.feedback)}`, true) : ''}${index === 0 && admin() && t.status === 'under_review' ? `<div class="actions safe-actions">${button('退回修改', 'return-form', { id: t.id }, 'secondary')}${button('验收通过并发放', 'confirm', { command: 'task-approve', id: t.id })}</div>` : ''}</div>`).join('')}</section>` : '';
   return `${badge(t.status === 'open' ? '招募中' : t.status)}<h1 class="detail-title">${esc(t.title)}</h1><p class="detail-byline">青禾社区 · 周禾发布${t.assignee ? ` · ${esc(displayName(t.assignee))}承接` : ''}</p>
     <div class="money-bar"><div><strong>${t.reward}</strong> 稻米<small>任务报酬</small></div><div class="money-label">${t.status === 'draft' ? '发布时冻结' : t.status === 'completed' ? '已发放' : t.status === 'cancelled' ? '已解冻' : '报酬已冻结'}<br>社区资金池</div></div>${callout}
-    ${submissions}<section class="detail-section"><h3>要做什么</h3><p class="description">${esc(t.description)}</p></section><section class="detail-section"><h3>交付要求</h3><p class="description">${esc(t.requirement)}</p></section>${applications}${history(t.history)}
+    ${submissions}<section class="detail-section"><h3>要做什么</h3><p class="description">${esc(t.description)}</p>${imageGroup(t)}</section><section class="detail-section"><h3>交付要求</h3><p class="description">${esc(t.requirement)}</p></section>${applications}${history(t.history)}
     ${admin() && ['open', 'draft'].includes(t.status) ? `<div class="danger-section"><p>选定承接者前，可以取消任务。</p>${button('取消任务', 'confirm', { command: 'task-cancel', id: t.id }, 'danger small')}</div>` : ''}`;
 }
 function eventDetail(e) {
@@ -265,7 +268,7 @@ function eventDetail(e) {
   else if (e.status === 'cancelled') cta = info(e.fee ? '活动已取消，报名费已全部退回。' : '活动已取消，申请已关闭。');
   const candidates = admin() ? `<section class="detail-section"><h3>申请名单 · ${e.applications.length} 人</h3>${e.applications.length ? e.applications.map(a => `<div class="candidate"><div class="candidate-heading"><strong>${esc(displayName(a.user))}</strong>${badge(a.status, a.status === 'not_selected' ? '未入选' : undefined)}</div><p>${esc(a.reason)}</p>${e.status === 'open' && a.status === 'pending' ? `<div class="candidate-actions">${button('拒绝申请', 'confirm', { command: 'event-reject', id: e.id, candidate: a.user }, 'secondary small')}${button('通过申请', 'execute', { command: 'event-approve', id: e.id, candidate: a.user }, 'primary small')}</div>` : ['open', 'started'].includes(e.status) && a.status === 'approved' ? `<div class="candidate-actions">${button('移除报名', 'confirm', { command: 'event-remove', id: e.id, candidate: a.user }, 'danger small')}</div>` : ''}</div>`).join('') : '<p class="muted">还没有人申请。</p>'}</section>` : mine ? `<section class="detail-section"><h3>我的申请</h3><div class="candidate-heading"><strong>${esc(displayName(actor))}</strong>${badge(mine.status, mine.status === 'not_selected' ? '未入选' : undefined)}</div><p class="description muted" style="margin-top:14px">${esc(mine.reason)}</p></section>` : '';
   return `${badge(e.status === 'open' ? '报名中' : e.status)}<h1 class="detail-title">${esc(e.title)}</h1><p class="detail-byline">青禾社区 · 周禾发起</p><div class="money-bar"><div><span class="amount-line"><strong>${e.fee || '免费'}</strong>${e.fee ? ' 稻米' : ''}</span><small>${e.fee ? '每人报名费' : '报名费用'}</small></div></div>
-    <p>${esc(e.date)}</p><p class="muted">${esc(e.location)}</p><div class="count-row"><div><strong>${e.applications.length} 人</strong><span>已提交申请</span></div><div><strong>${approved} / ${e.capacity} 人</strong><span>已通过 / 上限</span></div></div><div style="margin-top:24px">${cta}</div><section class="detail-section"><h3>活动介绍</h3><p class="description">${esc(e.description)}</p></section>${candidates}${history(e.history)}
+    <p>${esc(e.date)}</p><p class="muted">${esc(e.location)}</p><div class="count-row"><div><strong>${e.applications.length} 人</strong><span>已提交申请</span></div><div><strong>${approved} / ${e.capacity} 人</strong><span>已通过 / 上限</span></div></div><div style="margin-top:24px">${cta}</div><section class="detail-section"><h3>活动介绍</h3><p class="description">${esc(e.description)}</p>${imageGroup(e)}</section>${candidates}${history(e.history)}
     ${admin() && e.status === 'started' ? `<div class="safe-actions"><p class="caption" style="margin-bottom:18px">活动结束后，请在这里确认。</p>${button('确认活动结束', 'confirm', { command: 'event-finish', id: e.id }, 'primary full')}</div>` : ''}${admin() && ['open', 'started'].includes(e.status) ? `<div class="danger-section"><p>取消后，报名费会全部退回。</p>${button('取消活动', 'confirm', { command: 'event-cancel', id: e.id }, 'danger small')}</div>` : ''}`;
 }
 function communityDetail(nodeId) {
@@ -311,15 +314,17 @@ function publishForm(type, id) {
 function composeForm(type = page() === 'tasks' ? 'task' : page() === 'events' ? 'event' : 'post', draftId) {
   if (!['post', 'event', 'task'].includes(type)) type = 'post';
   const previous = $('action-form');
-  if ($('action-dialog').open && previous?.dataset.kind) composeDrafts[`${actor}:${previous.dataset.kind}`] = { ...Object.fromEntries(new FormData(previous)), draftId: previous.dataset.draftId };
+  if ($('action-dialog').open && previous?.dataset.kind) composeDrafts[`${actor}:${previous.dataset.kind}`] = { ...Object.fromEntries(new FormData(previous)), draftId: previous.dataset.draftId, images: composerImages.slice() };
   if (type === 'post') actionForm('发布帖子', `<label>标题（选填）<input name="title" maxlength="80" placeholder="为这次分享取一个标题"></label><label>想分享什么<textarea name="text" required placeholder="分享社区里的见闻、想法或近况，用 #话题 标记内容…"></textarea></label>`, 'post-publish', { kind: 'post' }, '发布帖子');
   else if (admin()) publishForm(type, draftId || composeDrafts[`${actor}:${type}`]?.draftId);
   else actionForm(`发布${type === 'task' ? '任务' : '活动'}`, info(`只有社区管理员可以发布${type === 'task' ? '任务' : '活动'}。`), 'publish', { kind: type }, '确认发布');
   const form = $('action-form');
   const saved = draftId ? null : composeDrafts[`${actor}:${type}`];
   if (saved) { for (const [key, value] of Object.entries(saved)) if (form.elements.namedItem(key)) form.elements.namedItem(key).value = value; if (saved.draftId) form.dataset.draftId = saved.draftId; }
+  composerImages = [...(saved?.images || itemFor(form.dataset.draftId)?.images || [])];
+  form.querySelector('textarea[name="text"], textarea[name="description"]')?.closest('label').insertAdjacentHTML('afterend', imageEditor(composerImages));
   if (type !== 'post' && !admin()) form.querySelector('button[type="submit"]').disabled = true;
-  form.insertAdjacentHTML('afterbegin', `<div class="compose-types" role="group" aria-label="发布类型">${[['post','发帖'],['event','发活动'],['task','发任务']].map(([value,label]) => `<button type="button" class="tab" aria-pressed="${value === type}" data-action="compose-type" data-kind="${value}">${label}</button>`).join('')}</div>`);
+  form.insertAdjacentHTML('afterbegin', `<div class="compose-types" role="group" aria-label="发布类型">${[['post','发帖'],['task','发任务'],['event','发活动']].map(([value,label]) => `<button type="button" class="tab" aria-pressed="${value === type}" data-action="compose-type" data-kind="${value}">${label}</button>`).join('')}</div>`);
 }
 function confirmation(command, id, candidate) {
   const i = itemFor(id); const task = id.startsWith('task');
@@ -395,10 +400,36 @@ document.addEventListener('submit', event => {
   event.preventDefault(); const form = event.target;
   if (!$('action-dialog').open || form.dataset.submitting === 'true') return;
   form.dataset.submitting = 'true';
-  const data = { ...form.dataset, ...Object.fromEntries(new FormData(form)) };
+  const data = { ...form.dataset, ...Object.fromEntries(new FormData(form)), ...(form.dataset.kind ? { images: composerImages.slice() } : {}) };
   run(event.submitter?.value === 'draft' ? 'draft' : form.dataset.command, data, true);
   form.dataset.submitting = 'false';
 });
+// Image selection stays in this static page; nothing is uploaded or persisted.
+function refreshImageEditor() {
+  const editor = document.querySelector('#action-form .image-editor');
+  if (editor) editor.outerHTML = imageEditor(composerImages);
+}
+document.addEventListener('change', event => {
+  if (event.target.id !== 'compose-images') return;
+  const files = [...event.target.files];
+  const supported = files.filter(file => ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type));
+  for (const file of supported) {
+    const src = URL.createObjectURL(file);
+    localImageURLs.add(src);
+    composerImages.push({ src, alt: file.name.replace(/\.[^.]+$/, '') });
+  }
+  refreshImageEditor();
+  if (supported.length !== files.length) showToast('请选择 JPG、PNG、WebP 或 GIF 图片。');
+});
+document.addEventListener('click', event => {
+  const remove = event.target.closest('[data-image-remove]');
+  if (!remove) return;
+  composerImages.splice(Number(remove.dataset.imageRemove), 1);
+  refreshImageEditor();
+  document.querySelector('#compose-images')?.focus();
+});
+setupImageViewer(itemFor);
+
 document.addEventListener('change', event => { if (event.target.id === 'task-community-filter') { taskListFilter = event.target.value; render(); return; } if (!['actor', 'detail-actor'].includes(event.target.id)) return; setActor(event.target.value); });
 for (const [name, css] of [['font', '--font'], ['gap', '--gap'], ['height', '--button']]) $('' + name + '-control').addEventListener('input', e => { document.documentElement.style.setProperty(css, `${e.target.value}px`); $(name + '-value').value = `${e.target.value}px`; });
 $('clock-start').addEventListener('click', () => {
@@ -406,7 +437,7 @@ $('clock-start').addEventListener('click', () => {
   catch (error) { showToast(error.message); }
 });
 $('width-control').addEventListener('click', () => { const narrow = document.body.classList.toggle('narrow'); const url = new URL(location.href); if (narrow) url.searchParams.set('width', 'narrow'); else url.searchParams.delete('width'); window.history.replaceState(null, '', url); $('width-control').setAttribute('aria-pressed', String(narrow)); $('width-control').textContent = narrow ? '恢复自适应宽度' : '模拟手机宽度'; });
-$('reset-demo').addEventListener('click', () => { state = initialState(); taskListFilter = 'all'; nodeListFilter = 'all'; eventNodeFilter = 'all'; Object.keys(myTaskFilters).forEach(k => delete myTaskFilters[k]); Object.keys(composeDrafts).forEach(k => delete composeDrafts[k]); $('action-dialog').close(); closeDetail(); render(); showToast('演示数据已重置'); });
+$('reset-demo').addEventListener('click', () => { localImageURLs.forEach(url => URL.revokeObjectURL(url)); localImageURLs.clear(); composerImages = []; state = initialState(); taskListFilter = 'all'; nodeListFilter = 'all'; eventNodeFilter = 'all'; Object.keys(myTaskFilters).forEach(k => delete myTaskFilters[k]); Object.keys(composeDrafts).forEach(k => delete composeDrafts[k]); $('action-dialog').close(); closeDetail(); render(); showToast('演示数据已重置'); });
 document.addEventListener('input', e => { if (e.target.id === 'global-search') { searchQuery = e.target.value; $('search-results').innerHTML = searchResults(); } });
 window.addEventListener('hashchange', () => { closeDetail(); render(); window.scrollTo(0, 0); });
 $('detail').addEventListener('close', () => { currentDetail = null; detailStack.length = 0; });

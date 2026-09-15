@@ -1,4 +1,6 @@
 // Local presentation state only. No Rice, PDS, network requests or persistence.
+const workshopImages = [];
+const pathImages = [];
 export const names = { admin: '周禾', lin: '林舟', chen: '陈言' };
 export function initialState() {
   return {
@@ -9,19 +11,20 @@ export function initialState() {
       chen: { name: names.chen, handle: '@chenyan.test', bio: '喜欢手作和画地图，想认识更多身边的朋友。' }
     },
     posts: [
+      { id: 'post-4', user: 'admin', author: '周禾', time: '刚刚', title: '把旧木凳留下来，继续陪伴大家', text: '今天把公共客厅的木凳搬到了工作台，准备好了砂纸和工具。\n\n周末一起打磨、加固，慢慢把它修好。 #社区手作', images: workshopImages, tag: '', likes: 3, likedBy: [], comments: [] },
       { id: 'post-1', user: 'admin', author: '周禾', time: '40 分钟前', title: '今天带志愿者跑通了村里老宅的测绘体验线', text: '18 个人，从早上量到日落。老宅的梁架比图纸上复杂得多，明天补一版剖面。', tag: '驻地日志', likes: 34, likedBy: [], comments: [{user:'chen', text:'辛苦大家！整理好的图纸也想一起看看。', time:'20 分钟前'}, {user:'lin', text:'下次测绘我也想参加。',time:'10 分钟前'}] },
       { id: 'post-2', user: 'chen', author: '陈言', time: '2 小时前', title: '公共客厅的书架，终于整理好了', text: '找到了几本大家一直在问的书，也留出了一层放社区的手作和村史资料。\n\n周末来坐坐，翻翻书，聊聊天。', tag: '社区日常', likes: 12, likedBy: [], comments: [{user:'admin',text:'谢谢，目录也可以放在门口，方便大家找书。',time:'1 小时前'}] },
-      { id: 'post-3', user: 'lin', author: '林舟', time: '昨天', title: '沿溪散步，遇见一棵很老的树', text: '从社区门口走到溪流转弯的地方，大约十五分钟。天快黑的时候，水面和树影都很安静。', tag: '村庄散步', likes: 21, likedBy: [], comments: [] }
+      { id: 'post-3', images: pathImages, user: 'lin', author: '林舟', time: '昨天', title: '沿溪散步，遇见一棵很老的树', text: '从社区门口走到溪流转弯的地方，大约十五分钟。天快黑的时候，水面和树影都很安静。', tag: '村庄散步', likes: 21, likedBy: [], comments: [] }
     ],
     // Opening test grants are included in cumulative receipts, independently of available/frozen funds.
     accounts: { admin: { balance: 1000, frozen: 200, totalEarned: 1200 }, lin: { balance: 180, frozen: 0, totalEarned: 180 }, chen: { balance: 80, frozen: 20, totalEarned: 100 } },
     tasks: [
-      { id: 'task-1', nodeId: 'qinghe', title: '为村里的步道画一张导览图', description: '走一遍从公共客厅到溪边的步道，整理适合第一次来访者使用的路线。\n\n请在导览图中标出入口、休息点和容易走错的岔路。', requirement: '提交一张清晰的路线图，以及一段简短的路线说明。', reward: 120, status: 'open', assignee: null, applications: [{ user: 'chen', reason: '我住在附近，熟悉这段步道，也做过社区地图。', status: 'pending' }], submissions: [], history: [{ time: '09:20', text: '周禾发布任务，冻结 120 稻米', receipt: 'DEMO-001' }, { time: '10:05', text: '陈言申请承接任务' }] },
+      { id: 'task-1', images: pathImages, nodeId: 'qinghe', title: '为村里的步道画一张导览图', description: '走一遍从公共客厅到溪边的步道，整理适合第一次来访者使用的路线。\n\n请在导览图中标出入口、休息点和容易走错的岔路。', requirement: '提交一张清晰的路线图，以及一段简短的路线说明。', reward: 120, status: 'open', assignee: null, applications: [{ user: 'chen', reason: '我住在附近，熟悉这段步道，也做过社区地图。', status: 'pending' }], submissions: [], history: [{ time: '09:20', text: '周禾发布任务，冻结 120 稻米', receipt: 'DEMO-001' }, { time: '10:05', text: '陈言申请承接任务' }] },
       { id: 'task-2', nodeId: 'qinghe', title: '整理公共客厅的图书目录', description: '为公共客厅现有的图书做一次整理，让大家更容易找到想读的书。', requirement: '提交图书分类目录，并说明摆放位置。', reward: 80, status: 'under_review', assignee: 'lin', applications: [{ user: 'lin', reason: '我可以在周末完成整理。', status: 'appointed' }], submissions: [{ text: '已经整理好 86 本图书，分为自然、手作、儿童、文学四类，并在书架上贴好了分类标签。\n\n目录中包含书名、作者和所在层数。', status: 'submitted', time: '11:30' }], history: [{ time: '昨天', text: '周禾发布任务，冻结 80 稻米', receipt: 'DEMO-002' }, { time: '09:00', text: '周禾选定林舟为承接者' }, { time: '11:30', text: '林舟提交成果，等待验收' }] }
     ],
     events: [
-      { id: 'event-1', nodeId: 'qinghe', title: '一起修好公共客厅的旧木凳', description: '带着一双愿意动手的手，来公共客厅一起修一张旧木凳。\n\n我们会学习打磨、加固和上蜡，不需要木工经验。工具和材料由社区准备。', date: '周日 14:00–16:00', location: '青禾公共客厅', fee: 20, capacity: 1, status: 'open', applications: [{ user: 'chen', reason: '想学习简单的家具修复，也愿意帮忙准备场地。', status: 'pending' }], history: [{ time: '09:00', text: '周禾发布活动' }, { time: '10:30', text: '陈言申请参加，冻结 20 稻米', receipt: 'DEMO-003' }] },
-      { id: 'event-2', nodeId: 'qinghe', title: '沿着溪流，认识我们的村庄', description: '从社区门口出发，沿着溪流慢慢走一圈。\n\n一起认识村里的老树、田地和公共空间，也认识住在附近的朋友。', date: '周六 08:30–10:00', location: '青禾社区门口集合', fee: 0, capacity: 8, status: 'open', applications: [], history: [{ time: '昨天', text: '周禾发布免费活动' }] }
+      { id: 'event-1', images: workshopImages, nodeId: 'qinghe', title: '一起修好公共客厅的旧木凳', description: '带着一双愿意动手的手，来公共客厅一起修一张旧木凳。\n\n我们会学习打磨、加固和上蜡，不需要木工经验。工具和材料由社区准备。', date: '周日 14:00–16:00', location: '青禾公共客厅', fee: 20, capacity: 1, status: 'open', applications: [{ user: 'chen', reason: '想学习简单的家具修复，也愿意帮忙准备场地。', status: 'pending' }], history: [{ time: '09:00', text: '周禾发布活动' }, { time: '10:30', text: '陈言申请参加，冻结 20 稻米', receipt: 'DEMO-003' }] },
+      { id: 'event-2', images: pathImages, nodeId: 'qinghe', title: '沿着溪流，认识我们的村庄', description: '从社区门口出发，沿着溪流慢慢走一圈。\n\n一起认识村里的老树、田地和公共空间，也认识住在附近的朋友。', date: '周六 08:30–10:00', location: '青禾社区门口集合', fee: 0, capacity: 8, status: 'open', applications: [], history: [{ time: '昨天', text: '周禾发布免费活动' }] }
     ],
     nodes: [
       { id: 'qinghe', name: '青禾社区', description: '一起照顾公共空间，分享手艺，连接日常。', members: { admin: 'member', lin: 'none', chen: 'pending' }, history: [{ time: '10:15', text: '陈言申请加入青禾社区' }] },
@@ -83,7 +86,7 @@ export function perform(current, user, action, data = {}) {
     const list = isTask ? s.tasks : s.events;
     const existing = list.find(x => x.id === data.draftId);
     check(!existing || existing.status === 'draft', '已发布内容的核心约定不能修改。');
-    const item = { ...(existing || {}), nodeId: 'qinghe', id: existing?.id || `${isTask ? 'task' : 'event'}-${s.seq++}`, title: text(data.title, '请填写标题。'), description: text(data.description, '请填写说明。'), status: action === 'draft' ? 'draft' : 'open', applications: [], history: [] };
+    const item = { ...(existing || {}), nodeId: 'qinghe', id: existing?.id || `${isTask ? 'task' : 'event'}-${s.seq++}`, title: text(data.title, '请填写标题。'), description: text(data.description, '请填写说明。'), images: data.images || existing?.images || [], status: action === 'draft' ? 'draft' : 'open', applications: [], history: [] };
     if (isTask) Object.assign(item, { reward: amount(data.amount), requirement: data.requirement || '请提交能说明完成情况的成果。', assignee: null, submissions: [] });
     else { const capacity = Number(data.capacity); check(Number.isSafeInteger(capacity) && capacity > 0, '请填写大于 0 的参与名额。'); Object.assign(item, { fee: amount(data.amount), capacity, date: text(data.date, '请填写活动时间。'), location: text(data.location, '请填写活动地点。') }); }
     const receipt = action === 'publish' && isTask ? funds(s, '冻结', 'admin', item, item.reward) : undefined;
@@ -100,7 +103,7 @@ export function perform(current, user, action, data = {}) {
     return { state: s, message: '资料已保存至当前演示' };
   }
   if (action === 'post-publish') {
-    const post = { id: `post-${s.seq++}`, user, author: s.profiles[user].name, time: '刚刚', title: String(data.title || '').trim(), text: text(data.text, '请写下想分享的内容。'), tag: String(data.tag || '').trim().replace(/^#/, ''), likes: 0, likedBy: [], comments: [] };
+    const post = { id: `post-${s.seq++}`, user, author: s.profiles[user].name, time: '刚刚', title: String(data.title || '').trim(), text: text(data.text, '请写下想分享的内容。'), images: data.images || [], tag: String(data.tag || '').trim().replace(/^#/, ''), likes: 0, likedBy: [], comments: [] };
     s.posts.unshift(post); return { state: s, message: '帖子已发布到演示广场', id: post.id };
   } else if (action === 'post-like' || action === 'post-comment') {
     const post = s.posts.find(p => p.id === data.id); check(post, '帖子不存在。');
