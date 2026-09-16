@@ -112,7 +112,7 @@ function render() {
   } else if (page() === 'notifications') {
     $('main').innerHTML = `<div class="page-heading"><div><h1>通知</h1><p class="muted">申请与协作的最新进展。</p></div>${notes.length ? button('全部已读', 'read-notifications', {}, 'quiet small') : ''}</div><div class="list">${notes.length ? notes.map(n => `<button class="notification" data-action="notice" data-id="${n.id}"><div class="candidate-heading"><h3>${esc(n.title)}</h3>${!n.readBy.includes(actor) ? '<span class="status review">未读</span>' : ''}</div><p>${esc(n.body)}</p><time>${esc(n.time)}</time></button>`).join('') : empty('暂时没有新通知', '申请或任务有进展时，会出现在这里。')}</div>`;
   } else if (page() === 'search') {
-    $('main').innerHTML = `<button class="search-back" data-action="search-back">← 返回${searchOrigin === 'tasks' ? '任务' : searchOrigin === 'me' ? '我的' : '广场'}</button><div class="page-heading"><h1>搜索</h1></div><label class="sr-only" for="global-search">搜索帖子、任务和社区</label><input id="global-search" class="search-box" type="search" placeholder="搜索帖子、任务、社区" value="${esc(searchQuery)}"><div id="search-results">${searchResults()}</div>`;
+    $('main').innerHTML = `<button class="search-back" data-action="search-back">← 返回${searchOrigin === 'tasks' ? '任务' : searchOrigin === 'events' ? '活动' : searchOrigin === 'me' ? '我的' : '广场'}</button><div class="page-heading"><h1>搜索</h1></div><label class="sr-only" for="global-search">搜索帖子、任务、活动、社区、用户</label><input id="global-search" class="search-box" type="search" placeholder="搜索帖子、任务、活动、社区、用户" value="${esc(searchQuery)}"><div id="search-results">${searchResults()}</div>`;
   } else if (page() === 'communities') {
     $('main').innerHTML = nodeDirectory();
   } else {
@@ -144,12 +144,24 @@ function postDetail(post) {
   return `${authorHeader(post)}${post.title ? `<h1 class="post-detail-title">${esc(post.title)}</h1>` : ''}<p class="description post-detail-text">${postText(post.text, true)}</p>${imageGroup(post)}${post.tag ? `<p class="post-topic">#${esc(post.tag)}</p>` : ''}${postActions(post)}<section class="detail-section"><h3>评论 · ${post.comments.length}</h3>${actor ? `<form id="comment-form" data-id="${post.id}" class="comment-form"><label class="sr-only" for="comment-input">写下你的评论</label><textarea id="comment-input" name="comment" required placeholder="写下你的评论…"></textarea><div class="single-action"><button type="submit" class="button primary">发表评论</button></div></form>` : `<div class="single-action">${button('登录后评论', 'login', {}, 'secondary')}</div>`}${post.comments.map(c => `<div class="candidate"><div class="candidate-heading"><strong>${esc(displayName(c.user))}</strong><span class="fine">${esc(c.time)}</span></div><p class="description">${esc(c.text)}</p></div>`).join('')}</section>`;
 }
 function searchResults() {
-  const q = searchQuery.trim().toLowerCase(); if (!q) return info('输入关键词，查找帖子、任务或社区。');
+  const q = searchQuery.trim().toLowerCase(); if (!q) return info('输入关键词，搜索帖子、任务、活动、社区、用户。');
   const posts = state.posts.filter(p => `${p.title} ${p.text} ${p.tag} ${p.author}`.toLowerCase().includes(q));
-  const events = state.events.filter(e => e.status !== 'draft' && `${e.title} ${e.description} ${e.location}`.toLowerCase().includes(q));
-  const tasks = state.tasks.filter(t => (admin() || t.status !== 'draft') && `${t.title} ${t.description}`.toLowerCase().includes(q));
+  const events = state.events.filter(e => e.status !== 'draft' && `${e.title} ${e.description} ${e.location} ${nodeFor(e.nodeId)?.name || ''}`.toLowerCase().includes(q));
+  const tasks = state.tasks.filter(t => (admin() || t.status !== 'draft') && `${t.title} ${t.description} ${nodeFor(t.nodeId)?.name || ''}`.toLowerCase().includes(q));
   const communities = state.nodes.filter(n => `${n.name} ${n.description} ${n.handle || ''}`.toLowerCase().includes(q));
-  return `<section><h2 class="search-section-title">帖子与活动 · ${posts.length + events.length}</h2><div class="post-stream">${posts.map(postCard).join('') + events.map(eventCard).join('') || '<p class="caption">没有相关内容</p>'}</div></section><section><h2 class="search-section-title">任务 · ${tasks.length}</h2><div class="list">${tasks.map(card).join('') || '<p class="caption">没有相关任务</p>'}</div></section><section><h2 class="search-section-title">社区 · ${communities.length}</h2><div class="node-list">${communities.map(communityCard).join('') || '<p class="caption">没有相关社区</p>'}</div></section>`;
+  const users = Object.keys(state.profiles).filter(user => `${displayName(user)} ${state.profiles[user].handle} ${state.profiles[user].bio}`.toLowerCase().includes(q));
+  return searchGroup('帖子', posts, postCard, 'post-stream')
+    + searchGroup('任务', tasks, card, 'list')
+    + searchGroup('活动', events, eventCard, 'post-stream')
+    + searchGroup('社区', communities, communityCard, 'node-list')
+    + searchGroup('用户', users, userCard, 'node-list');
+}
+function searchGroup(title, items, renderCard, listClass) {
+  return `<details class="search-result-group" open><summary><h2 class="search-section-title">${title} · ${items.length}</h2><span class="search-group-toggle"><span class="search-collapse-label">收起</span><span class="search-expand-label">展开</span><span class="search-group-chevron" aria-hidden="true"></span></span></summary><div class="${listClass}">${items.map(renderCard).join('') || `<p class="caption">没有相关${title}</p>`}</div></details>`;
+}
+function userCard(user) {
+  const profile = state.profiles[user];
+  return `<button class="node-card" data-action="author" data-user="${esc(user)}"><span class="node-card-heading"><span class="post-avatar" aria-hidden="true">${esc(displayName(user).slice(0, 1))}</span><span class="node-card-name"><strong>${esc(displayName(user))}</strong><small>${esc(profile.handle)}</small></span><span class="menu-arrow" aria-hidden="true">→</span></span>${profile.bio ? `<span class="node-card-copy">${esc(profile.bio)}</span>` : ''}</button>`;
 }
 function communityCard(node) {
   const status = node.members[actor];

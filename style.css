@@ -70,6 +70,15 @@ body.narrow .task-hero-v13{padding:22px}body.narrow .task-hero-v13 h2{font-size:
 
 /* User feedback: node directory first, then the existing detail overlay. */
 .node-list{display:grid;gap:14px}
+.search-result-group{margin-top:22px}
+.search-result-group>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:52px;cursor:pointer;list-style:none}
+.search-result-group>summary::-webkit-details-marker{display:none}
+.search-result-group .search-section-title{margin:0;font-size:24px}
+.search-result-group[open]>summary{margin-bottom:16px}
+.search-group-toggle{display:flex;align-items:center;gap:10px;color:var(--secondary);font-size:17px;white-space:nowrap}
+.search-group-chevron{width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 3px 5px}
+.search-result-group[open] .search-group-chevron{transform:rotate(225deg);margin-top:5px;margin-bottom:0}
+.search-result-group:not([open]) .search-collapse-label,.search-result-group[open] .search-expand-label{display:none}
 .node-card{display:block;width:100%;text-align:left;padding:22px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
 .node-card:hover{border-color:var(--accent)}
 .node-card-heading{display:flex;align-items:center;gap:12px}.node-card-name{min-width:0;flex:1}.node-card-name strong{display:block;font-size:22px;line-height:1.45}.node-card-name small{display:block;font-size:16px;color:var(--secondary);overflow-wrap:anywhere;margin-top:3px}
